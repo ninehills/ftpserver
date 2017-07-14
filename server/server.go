@@ -16,13 +16,24 @@ type CommandDescription struct {
 	Fn   func(*clientHandler) // Function to handle it
 }
 
-var commandsMap map[string]*CommandDescription
+//var commandsMap map[string]*CommandDescription
 
-func init() {
-	// This is shared between FtpServer instances as there's no point in making the FTP commands behave differently
-	// between them.
+// FtpServer is where everything is stored
+// We want to keep it as simple as possible
+type FtpServer struct {
+	Settings         *Settings                      // General settings
+	Listener         net.Listener                   // Listener used to receive files
+	StartTime        time.Time                      // Time when the server was started
+	connectionsByID  map[uint32]*clientHandler      // Connections map
+	connectionsMutex sync.RWMutex                   // Connections map sync
+	clientCounter    uint32                         // Clients counter
+	driver           MainDriver                     // Driver to handle the client authentication and the file access driver selection
+	commandsMap      map[string]*CommandDescription // Commands map
+}
 
-	commandsMap = make(map[string]*CommandDescription)
+func (server *FtpServer) loadCommandsMap() {
+
+	commandsMap := make(map[string]*CommandDescription)
 
 	// Authentication
 	commandsMap["USER"] = &CommandDescription{Fn: (*clientHandler).handleUSER, Open: true}
@@ -59,7 +70,9 @@ func init() {
 	commandsMap["CDUP"] = &CommandDescription{Fn: (*clientHandler).handleCDUP}
 	commandsMap["NLST"] = &CommandDescription{Fn: (*clientHandler).handleLIST}
 	commandsMap["LIST"] = &CommandDescription{Fn: (*clientHandler).handleLIST}
-	commandsMap["MLSD"] = &CommandDescription{Fn: (*clientHandler).handleMLSD}
+	if !server.Settings.DisableMLSD {
+		commandsMap["MLSD"] = &CommandDescription{Fn: (*clientHandler).handleMLSD}
+	}
 	commandsMap["MKD"] = &CommandDescription{Fn: (*clientHandler).handleMKD}
 	commandsMap["RMD"] = &CommandDescription{Fn: (*clientHandler).handleRMD}
 
@@ -69,18 +82,8 @@ func init() {
 	commandsMap["EPSV"] = &CommandDescription{Fn: (*clientHandler).handlePASV}
 	commandsMap["PORT"] = &CommandDescription{Fn: (*clientHandler).handlePORT}
 	commandsMap["QUIT"] = &CommandDescription{Fn: (*clientHandler).handleQUIT, Open: true}
-}
 
-// FtpServer is where everything is stored
-// We want to keep it as simple as possible
-type FtpServer struct {
-	Settings         *Settings                 // General settings
-	Listener         net.Listener              // Listener used to receive files
-	StartTime        time.Time                 // Time when the server was started
-	connectionsByID  map[uint32]*clientHandler // Connections map
-	connectionsMutex sync.RWMutex              // Connections map sync
-	clientCounter    uint32                    // Clients counter
-	driver           MainDriver                // Driver to handle the client authentication and the file access driver selection
+	server.commandsMap = commandsMap
 }
 
 func (server *FtpServer) loadSettings() {
@@ -100,6 +103,8 @@ func (server *FtpServer) loadSettings() {
 		s.MaxConnections = 10000
 	}
 	server.Settings = s
+
+	server.loadCommandsMap()
 }
 
 // Listen starts the listening

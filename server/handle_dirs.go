@@ -91,10 +91,6 @@ func (c *clientHandler) handleLIST() {
 }
 
 func (c *clientHandler) handleMLSD() {
-	if c.daddy.Settings.DisableMLSD {
-		c.writeMessage(500, "MLSD has been disabled")
-		return
-	}
 	if files, err := c.driver.ListFiles(c); err == nil {
 		if tr, err := c.TransferOpen(); err == nil {
 			defer c.TransferClose()

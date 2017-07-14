@@ -136,7 +136,7 @@ func (c *clientHandler) handleCommand(line string) {
 	c.command = strings.ToUpper(command)
 	c.param = param
 
-	cmdDesc := commandsMap[c.command]
+	cmdDesc := c.daddy.commandsMap[c.command]
 	if cmdDesc == nil {
 		c.writeMessage(500, "Unknown command")
 		return
