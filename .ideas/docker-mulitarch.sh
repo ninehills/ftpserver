@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh -ex
 
 version=$(go version|grep -Eo go[0-9\.]+)
 
@@ -41,29 +41,35 @@ elif [ "${target}" = "win" ]; then
     GOOS=windows
     GOARCH=amd64
     BINARY=ftpserver.exe
-    BINARY_TARGET=C:\ftpserver.exe
+    BINARY_TARGET=C:\\bin\ftpserver.exe
+    CONF_FILE=C:\\etc\ftpserver.conf
     DOCKER_FROM=microsoft/nanoserver
     DOCKER_TAG_PREFIX=win-
 fi
 
-CGO_ENABLED=0 go build -a -installsuffix cgo
+dir=$(pwd)
+cd ..
+rm -f ${BINARY}
+GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=0 go build -a -installsuffix cgo
+file ${BINARY}
+cd ${dir}
 # GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -installsuffix cgo
 # GOOS=linux GOARCH=arm CGO_ENABLED=0 go build -a -installsuffix cgo
 
 echo "
 FROM ${DOCKER_FROM}
 EXPOSE 2121-2200
-COPY sample/conf/settings.toml ${CONF_FILE}
-CMD mkdir -p ${DATA_DIR}
+COPY ../sample/conf/settings.toml ${CONF_FILE}
+CMD mkdir ${DATA_DIR}
 COPY ${BINARY} ${BINARY_TARGET}
 ENTRYPOINT [ \"${BINARY_TARGET}\", \"-conf=${CONF_FILE}\", \"-data=${DATA_DIR}\" ]
-" >Dockerfile
+" >Dockerfilegen
 
-echo "Docker repo: ${DOCKER_REPO}:${TRAVIS_COMMIT}"
+#echo "Docker repo: ${DOCKER_REPO}:${TRAVIS_COMMIT}"
 
 DOCKER_NAME=${DOCKER_REPO}:${TRAVIS_COMMIT}
 
-docker build -t ${DOCKER_NAME} .
+docker build -f Dockerfilegen -t ${DOCKER_NAME} .
 
 docker tag ${DOCKER_NAME} ${DOCKER_REPO}:travis-${TRAVIS_BUILD_NUMBER}
 
