@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fclairamb/ftpserver/server"
 	"github.com/fclairamb/goftp"
+	"github.com/ninehills/ftpserver/server"
 )
 
 func createTemporaryFile(t *testing.T, targetSize int) *os.File {

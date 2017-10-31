@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/fclairamb/ftpserver/server"
+	"github.com/ninehills/ftpserver/server"
 )
 
 // NewTestServer provides a test server with or without debugging

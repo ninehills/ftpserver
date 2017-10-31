@@ -18,6 +18,11 @@
 # [dataPortRange]
 # start = 2122
 # end = 2200
+
+# Password
+user = "test"
+pass = "test"
+
 [dataPortRange]
 start = 2122
 end = 2200

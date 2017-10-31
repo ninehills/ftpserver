@@ -7,10 +7,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/fclairamb/ftpserver/sample"
-	"github.com/fclairamb/ftpserver/server"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/ninehills/ftpserver/sample"
+	"github.com/ninehills/ftpserver/server"
 )
 
 var (

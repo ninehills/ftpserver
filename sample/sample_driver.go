@@ -12,18 +12,19 @@ import (
 	"os"
 	"time"
 
-	"github.com/fclairamb/ftpserver/server"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/naoina/toml"
+	"github.com/ninehills/ftpserver/server"
 )
 
 // MainDriver defines a very basic serverftp driver
 type MainDriver struct {
-	Logger       log.Logger  // Logger (probably shared with other components)
-	SettingsFile string      // Settings file
-	BaseDir      string      // Base directory from which to serve file
-	tlsConfig    *tls.Config // TLS config (if applies)
+	Logger       log.Logger       // Logger (probably shared with other components)
+	SettingsFile string           // Settings file
+	Settings     *server.Settings // Driver Settings
+	BaseDir      string           // Base directory from which to serve file
+	tlsConfig    *tls.Config      // TLS config (if applies)
 }
 
 // WelcomeUser is called to send the very first welcome message
@@ -35,11 +36,10 @@ func (driver *MainDriver) WelcomeUser(cc server.ClientContext) (string, error) {
 
 // AuthUser authenticates the user and selects an handling driver
 func (driver *MainDriver) AuthUser(cc server.ClientContext, user, pass string) (server.ClientHandlingDriver, error) {
-	if user == "bad" || pass == "bad" {
-		return nil, errors.New("bad username or password")
+	if user == driver.Settings.User && pass == driver.Settings.Pass {
+		return driver, nil
 	}
-
-	return driver, nil
+	return nil, errors.New("bad username or password")
 }
 
 // GetTLSConfig returns a TLS Certificate to use
@@ -214,6 +214,7 @@ func NewSampleDriver() (*MainDriver, error) {
 		BaseDir:      dir,
 	}
 
+	driver.Settings = driver.GetSettings()
 	// This is also a good time to create our dir
 	os.MkdirAll(driver.BaseDir, 0777)
 
